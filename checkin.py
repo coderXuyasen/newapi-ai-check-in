@@ -948,20 +948,20 @@ class CheckIn:
         print(
             f"ℹ️ {self.account_name}: Executing check-in with existing cookies (using proxy: {'true' if self.http_proxy_config else 'false'})"
         )
-    # ===== 新增：AnyRouter 刷新 WAF cookies =====
-    if "anyrouter" in self.provider_config.name.lower():
-        print(f"ℹ️ {self.account_name}: AnyRouter refreshing WAF cookies before API calls")
-        
-        # 重新获取 WAF cookies
-        fresh_waf = await self.get_waf_cookies_with_browser()
-        if fresh_waf:
-            # 保留 session，替换 WAF cookies
-            session_cookie = cookies.get('session')
-            cookies = fresh_waf.copy()
-            if session_cookie:
-                cookies['session'] = session_cookie
-            print(f"✅ {self.account_name}: WAF cookies refreshed: {list(cookies.keys())}")
-    # ===== 新增结束 =====
+        # ===== 新增：AnyRouter 刷新 WAF cookies =====
+        if "anyrouter" in self.provider_config.name.lower():
+            print(f"ℹ️ {self.account_name}: AnyRouter refreshing WAF cookies before API calls")
+            
+            # 重新获取 WAF cookies
+            fresh_waf = await self.get_waf_cookies_with_browser()
+            if fresh_waf:
+                # 保留 session，替换 WAF cookies
+                session_cookie = cookies.get('session')
+                cookies = fresh_waf.copy()
+                if session_cookie:
+                    cookies['session'] = session_cookie
+                print(f"✅ {self.account_name}: WAF cookies refreshed: {list(cookies.keys())}")
+        # ===== 新增结束 =====
         session = curl_requests.Session(impersonate=impersonate, proxy=self.http_proxy_config, timeout=30)
         
         try:
