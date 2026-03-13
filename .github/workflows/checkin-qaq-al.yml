@@ -1,11 +1,7 @@
-name: Linux.do 自动阅读帖子
+name: qaq.al 自动签到
 on:
   schedule:
-    # UTC 时间，北京时间 9、14、20 点执行
-    # UTC 01:00 = 北京 09:00
-    # UTC 06:00 = 北京 14:00
-    # UTC 12:00 = 北京 20:00
-    - cron: '0 1,6,12 * * *'  # 北京 09,14,20
+    - cron: '0 */8 * * *'
   workflow_dispatch:
     inputs:
       debug:
@@ -14,7 +10,7 @@ on:
         type: boolean
 
 jobs:
-  read-posts:
+  checkin:
     permissions:
       id-token: write
       contents: read
@@ -79,29 +75,20 @@ jobs:
         uv run camoufox fetch
         echo "✅ Camoufox 浏览器安装完成"
 
-    - name: 恢复登录状态缓存
+    - name: 恢复余额历史缓存
       uses: actions/cache/restore@v4
       with:
         path: |
-          storage-states
-        key: storage-state-${{ hashFiles('storage-states/*.json') }}
+          balance_hash_qaq_al.txt
+        key: balance-hash-qaq-al-${{ hashFiles('balance_hash_qaq_al.txt') }}
         restore-keys: |
-          storage-state-
+          balance-hash-qaq-al-
 
-    - name: 恢复帖子ID缓存
-      uses: actions/cache/restore@v4
-      with:
-        path: |
-          linuxdo_reads
-        key: linuxdo-reads-${{ hashFiles('linuxdo_reads/*.txt') }}
-        restore-keys: |
-          linuxdo-reads-
-
-    - name: 执行阅读帖子
+    - name: 执行签到
       env:
-        ACCOUNTS: ${{ secrets.ACCOUNTS_LINUX_DO }}
-        LINUXDO_BASE_TOPIC_ID: ${{ secrets.LINUXDO_BASE_TOPIC_ID }}
-        LINUXDO_MAX_POSTS: ${{ secrets.LINUXDO_MAX_POSTS }}
+        ACCOUNTS_QAQ_AL: ${{ secrets.ACCOUNTS_QAQ_AL }}
+        PROXY: ${{ secrets.PROXY_QAQ_AL }}
+        QAQ_AL_TIER: ${{ vars.QAQ_AL_TIER || '4' }}
         DEBUG: ${{ github.event_name == 'workflow_dispatch' && inputs.debug || vars.DEBUG || 'false' }}
         DINGDING_WEBHOOK: ${{ secrets.DINGDING_WEBHOOK }}
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
@@ -113,37 +100,22 @@ jobs:
         FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
         WEIXIN_WEBHOOK: ${{ secrets.WEIXIN_WEBHOOK }}
       run: |
-        # 列出 linuxdo_reads 目录文件
-        if (Test-Path "linuxdo_reads") {
-          echo "📁 linuxdo_reads 目录内容:"
-          Get-ChildItem -Path linuxdo_reads -File | ForEach-Object { echo "  - $($_.Name)" }
-        } else {
-          echo "⚠️ linuxdo_reads 目录不存在"
-        }
-        # 执行阅读帖子
-        uv run python -u linuxdo_read_posts.py
+        # 执行签到
+        uv run python -u checkin_qaq_al/main.py
 
-    - name: 保存登录状态缓存
-      if: hashFiles('storage-states/*.json') != ''
+    - name: 保存余额历史缓存
+      if: hashFiles('balance_hash_qaq_al.txt') != ''
       uses: actions/cache/save@v4
       with:
         path: |
-          storage-states
-        key: storage-state-${{ hashFiles('storage-states/*.json') }}
-
-    - name: 保存帖子ID缓存
-      if: hashFiles('linuxdo_reads/*.txt') != ''
-      uses: actions/cache/save@v4
-      with:
-        path: |
-          linuxdo_reads
-        key: linuxdo-reads-${{ hashFiles('linuxdo_reads/*.txt') }}
+          balance_hash_qaq_al.txt
+        key: balance-hash-qaq-al-${{ hashFiles('balance_hash_qaq_al.txt') }}
 
     - name: 保存日志
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: linuxdo-read-artifacts-${{ github.run_number }}
+        name: qaq-al-artifacts-${{ github.run_number }}
         path: |
           logs/
           screenshots/
@@ -153,5 +125,5 @@ jobs:
     - name: 执行结果
       if: always()
       run: |
-        echo "阅读帖子任务执行完成"
+        echo "qaq.al 签到任务执行完成"
         echo "时间: $(Get-Date)"
